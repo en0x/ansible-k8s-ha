@@ -1,0 +1,20 @@
+---
+configs:
+  use: 'osx'
+  osx:
+    master_count: '0'
+    worker_count: '0'
+    system_vcpus: '1'
+    system_memory: '2048'
+    bridge_enabled: false
+    bridge_eth: 'eno1'
+    private_subnet: '172.16.35'
+  windows:
+    public_ip: '192.168.1.117'
+    master_count: '0'
+    worker_count: '0'
+    system_vcpus: '1'
+    system_memory: '2048'
+    bridge_enabled: false
+    bridge_eth: 'eno1'
+    private_subnet: '172.16.35'
