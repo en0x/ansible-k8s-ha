@@ -24,26 +24,24 @@ Vagrant.configure("2") do |config|
         v.cpus = $cpus
       end
     end
+    # only start ansible provision after the last box
+    if "#{i}" == 3
+      config.vm.provision "ansible" do |ansible|
+        ansible.playbook = "ansible/playbook.yml"
+        ansible.host_vars = {
+          "k8s-master1" => { "ansible_host" => "172.16.35.11", "ansible_port" => "22"},
+          "k8s-master2" => { "ansible_host" => "172.16.35.12", "ansible_port" => "22"},
+          "k8s-master3" => { "ansible_host" => "172.16.35.13", "ansible_port" => "22"}
+        }
+        ansible.groups = {
+          "k8s-main" => ["k8s-master1"],
+          "k8s-masters" => ["k8s-master[2:3]"],
+          "all_groups:children" => ["k8s-main", "k8s-masters"]
+        }
+        ansible.become = true
+        ansible.limit = "all"
+        ansible.host_key_checking = false
+      end
+    end
   end
 end
-
-# Run ansible to create inventory file and run sample playbook.yml
-Vagrant.configure("2") do |ansible|
-  ansible.vm.provision "ansible" do |ansible|
-    ansible.playbook = "ansible/playbook.yml"
-    ansible.host_vars = {
-      "k8s-master1" => { "ansible_host" => "172.16.35.11", "ansible_port" => "22"},
-      "k8s-master2" => { "ansible_host" => "172.16.35.12", "ansible_port" => "22"},
-      "k8s-master3" => { "ansible_host" => "172.16.35.13", "ansible_port" => "22"}
-    }
-    ansible.groups = {
-      "k8s-main" => ["k8s-master1"],
-      "k8s-masters" => ["k8s-master[2:3]"],
-      "all_groups:children" => ["k8s-main", "k8s-masters"]
-    }
-    ansible.become = true
-    ansible.limit = "all"
-    ansible.host_key_checking = false
-  end
-end
-
