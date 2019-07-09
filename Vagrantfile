@@ -8,39 +8,42 @@ if File.exist?(CONFIG)
   require CONFIG
 end
 
+NODES = 3
+
 # Create 3 VMs
-Vagrant.configure("2") do |config|
-  config.vm.box = $os_image
+Vagrant.configure("2") do |node|
+  node.vm.box = $os_image
 
-  (1..3).each do |i|
-    config.vm.define "k8s-master#{i}", autostart:true do |node|
+  (1..NODES).each do |node_id|
+    node.vm.define "k8s-master#{node_id}", autostart:true do |node|
 
-      node.vm.hostname="k8s-master#{i}"
-      ip_addr = "#{$private_subnet}.1#{i}"
+      node.vm.hostname="k8s-master#{node_id}"
+      node.vm.provision "shell", inline: "swapoff -a"
+      ip_addr = "#{$private_subnet}.1#{node_id}"
       node.vm.network "private_network",  ip: "#{ip_addr}",  auto_config: true
       node.vm.provider $provider do |v|
-        v.name = "k8s-master#{i}"
+        v.name = "k8s-master#{node_id}"
         v.memory = $memory
         v.cpus = $cpus
       end
-    end
-    # only start ansible provision after the last box
-    if "#{i}" == 3
-      config.vm.provision "ansible" do |ansible|
-        ansible.playbook = "ansible/playbook.yml"
-        ansible.host_vars = {
-          "k8s-master1" => { "ansible_host" => "172.16.35.11", "ansible_port" => "22"},
-          "k8s-master2" => { "ansible_host" => "172.16.35.12", "ansible_port" => "22"},
-          "k8s-master3" => { "ansible_host" => "172.16.35.13", "ansible_port" => "22"}
-        }
-        ansible.groups = {
-          "k8s-main" => ["k8s-master1"],
-          "k8s-masters" => ["k8s-master[2:3]"],
-          "all_groups:children" => ["k8s-main", "k8s-masters"]
-        }
-        ansible.become = true
-        ansible.limit = "all"
-        ansible.host_key_checking = false
+      # only start ansible provision after the last box
+      if node_id == 3
+        node.vm.provision "ansible" do |ansible|
+          ansible.playbook = "#{$ansible_playbook}"
+          ansible.host_vars = {
+            "k8s-master1" => { "ansible_host" => "#{$private_subnet}.11", "ansible_port" => "22"},
+            "k8s-master2" => { "ansible_host" => "#{$private_subnet}.12", "ansible_port" => "22"},
+            "k8s-master3" => { "ansible_host" => "#{$private_subnet}.13", "ansible_port" => "22"}
+          }
+          ansible.groups = {
+            "k8s-main" => ["k8s-master1"],
+            "k8s-masters" => ["k8s-master[2:3]"],
+            "all_groups:children" => ["k8s-main", "k8s-masters"]
+          }
+          ansible.become = true
+          ansible.limit = "all"
+          ansible.host_key_checking = false
+        end
       end
     end
   end
