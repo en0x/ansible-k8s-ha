@@ -28,7 +28,7 @@ Vagrant.configure("2") do |config|
 end
 
 # Run ansible to create inventory file and run sample playbook.yml
-Vagrant.configure("3") do |ansible|
+Vagrant.configure("2") do |ansible|
   ansible.vm.provision "ansible" do |ansible|
     ansible.playbook = "ansible/playbook.yml"
     ansible.host_vars = {
