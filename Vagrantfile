@@ -27,7 +27,7 @@ Vagrant.configure("2") do |node|
         v.cpus = $cpus
       end
       # only start ansible provision after the last box
-      if node_id == 3
+      if node_id == NODES
         node.vm.provision "ansible" do |ansible|
           ansible.playbook = "#{$ansible_playbook}"
           ansible.host_vars = {
