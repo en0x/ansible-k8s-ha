@@ -1,10 +1,59 @@
 ---
 - hosts: all
+  vars:
+    kubelet_version: 1.15.0
+    kubeadm_version: 1.15.0
+    kubectl_version: 1.15.0
   tasks:
     - name: ensure ntpd is at the latest version
       yum: pkg=ntp state=latest
       notify:
       - restart ntpd
+    #Install K8s
+    - name: update k8 repo
+      become: true
+      shell: |
+          cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+          [kubernetes]
+          name=Kubernetes
+          baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+          enabled=1
+          gpgcheck=1
+          repo_gpgcheck=1
+          gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+          EOF
+
+      # Set SELinux in permissive mode (effectively disabling it)
+    - name: selinux passsive mode
+      become: true
+      shell: |
+        setenforce 0
+        sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+
+  #K8s seperate install
+
+    - name:  install kubelet
+      yum: "name=kubelet-{{kubelet_version}} state=present"
+
+    - name:  install kubeadm
+      yum: "name=kubeadm-{{kubeadm_version}} state=present"
+    
+    - name:  install kubectl
+      yum: "name=kubectl-{{kubectl_version}} state=present"
+        
+    - name:  install docker
+      yum: name=docker state=latest
+
+
+
+    # - name: enable kubectl
+    #   command: systemctl restart docker && systemctl enable docker
+    - name:  enable kublet
+      command: systemctl enable --now kubelet
+
+    # - name: initialize kubernetes
+    #   command: kubeadm init
+        
   handlers:
     - name: restart ntpd
       service: name=ntpd state=restarted
