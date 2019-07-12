@@ -28,7 +28,7 @@ Vagrant.configure("2") do |node|
       end
       # only start ansible provision after the last box
       if node_id == NODES
-        node.vm.provision "ansible" do |ansible|
+        node.vm.provision "ansible_local" do |ansible|
           ansible.playbook = "#{$ansible_playbook}"
           ansible.host_vars = {
             "k8s-master1" => { "ansible_host" => "#{$private_subnet}.11", "ansible_port" => "22"},
@@ -42,7 +42,6 @@ Vagrant.configure("2") do |node|
           }
           ansible.become = true
           ansible.limit = "all"
-          ansible.host_key_checking = false
         end
       end
     end
