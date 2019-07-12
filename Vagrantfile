@@ -42,7 +42,6 @@ Vagrant.configure("2") do |node|
           }
           ansible.become = true
           ansible.limit = "all"
-          #ansible.host_key_checking = false
         end
       end
     end
