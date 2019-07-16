@@ -26,9 +26,9 @@ Vagrant.configure("2") do |node|
         v.memory = $memory
         v.cpus = $cpus
       end
-      # only start ansible provision after the last box
+      # only start ansible provision after the last box (does not work with ansible local Windows)
       if node_id == NODES
-        node.vm.provision "ansible_local" do |ansible|
+        node.vm.provision "ansible" do |ansible|
           ansible.playbook = "#{$ansible_playbook}"
           ansible.host_vars = {
             "k8s-master1" => { "ansible_host" => "#{$private_subnet}.11", "ansible_port" => "22"},
