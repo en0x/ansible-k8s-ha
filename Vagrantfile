@@ -38,8 +38,7 @@ Vagrant.configure("2") do |node|
           ansible.groups = {
             "main" => ["k8s-master1"],
             "masters" => ["k8s-master[2:3]"],
-            "all" => ["k8s-master[1:3]"],
-            "all_groups:children" => ["k8s-main", "k8s-masters"]
+            "all" => ["k8s-master[1:3]"]
           }
           ansible.become = true
           ansible.limit = "all"
