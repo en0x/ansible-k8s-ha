@@ -6,7 +6,13 @@ kubernetes_version: 1.15.1
 
 docker_version: 18.09.8
 
-# kubernetes API load balanced VIP for HA installations
+# cluster dns name and IP
+cluster_name: cluster.local
+domain_name: test.com # use to create wildcard ssl certificate for api and etcd
+
+# cluster service ip range
+service_ip_range: 10.96.0.0/24
+kubernetes_service_ip: 10.96.0.1  #IP of default kubernetes service, it is the first IP of network CIDR range
 
 # Docker Daemon configuration
 docker_ce_daemon_options:
@@ -18,3 +24,14 @@ docker_ce_daemon_options:
     storage-driver: overlay2
     storage-opts: [ "overlay2.override_kernel_check=true" ]
 
+# Use keepalived for API HA. If there is only one master node, then set 'enabled' to false.
+keepalived:
+  enabled: true
+  interface: "eth1" # "{{ ansible_default_ipv4.interface }}"
+  shared_ip: 10.1.0.100		# Virtual IP
+  vrid: 110			# Virtual Router ID
+  adv_interval: 1		# VRRP advert interval
+  authtype: PASS		# 'PASS' (simple password) or 'AH' (IPSEC)
+  password: k8s@123		# password for accessing VRRP
+
+etcd_peer_url_scheme: https

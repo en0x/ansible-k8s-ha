@@ -1,14 +1,37 @@
+---
+
+# Yum repo
 - hosts: all
   become: yes
   roles:
-    - requirements
+    - role: requirements
+      when: ansible_os_family == "RedHat"
+  tags:
+    - yum-repo
+
+# Install sslcert
+- hosts: main
+  roles:
+    - role: certificates
+  tags:
+    - certificates
+
+- hosts: masters
+  roles:
+    - role: distributecertificates
+  tags:
+    - distributecertificates
 
 - hosts: all
   become: yes
   roles:
     - kubeadm-requirements
+  tags:
+    - kubeadm-requirements
 
 - hosts: all
   become: yes
   roles:
+    - docker
+  tags:
     - docker
