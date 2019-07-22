@@ -1,0 +1,12 @@
+---
+- name: create .kube directory
+  file:
+    path: $HOME/.kube
+    state: directory
+    mode: 0755
+
+- name: Get kubeconfig and store it in $HOME/.kube/config
+  fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: $HOME/.kube/config
+    flat: yes

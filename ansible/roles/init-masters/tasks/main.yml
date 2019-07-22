@@ -1,7 +1,4 @@
 ---
-- name: kubeadm config images pull
-  command: "kubeadm config images pull"
-
 - name: Create kubernetes config directory
   file:
     path: "/etc/kubernetes"
@@ -29,6 +26,9 @@
     remote_src: yes
     creates: "/opt/cni/bin/flannel"
 
+- name: kubeadm config images pull
+  command: "kubeadm config images pull"
+
 - name: reset Kubernetes master (just in case)
   command: kubeadm reset -f
   register: out
@@ -48,6 +48,7 @@
     kubeadm_join: "{{ kubeadm_join_cmd.stdout }}"
 
 - debug: var=kubeadm_join
+  delegate_to: "{{ groups.masters | first }}"
 
 - name: Get certificate key
   shell: "kubeadm alpha certs certificate-key"
@@ -59,6 +60,7 @@
   delegate_to: "{{ groups.masters | first }}"
 
 - debug: var=cert_key_join
+  delegate_to: "{{ groups.masters | first }}"
 
 - name: Store join command
   action: copy content="{{ kubeadm_join }}" dest="/etc/kubernetes/kubeadm-join.command"
@@ -71,6 +73,7 @@
     path: $HOME/.kube
     state: directory
     mode: 0755
+  when: ansible_hostname == 'k8s-master1'
 
 - name: copy admin.conf to user's kube config
   copy:
@@ -78,39 +81,47 @@
     dest: /home/vagrant/.kube/config
     remote_src: yes
     owner: vagrant
-  delegate_to: "{{ groups.master | first }}"
+  when: ansible_hostname == 'k8s-master1'
 
 - name: Copy kube-flannel.yaml file
   template:
     src: kube-flannel.yml.j2
     dest: "/etc/kubernetes/kube-flannel.yml"
     mode: u=rw,g=r,o=r
-  delegate_to: "{{ groups.masters | first }}"
+  when: ansible_hostname == 'k8s-master1'
 
 - name: Install flannel
   become_user: vagrant
   shell: "kubectl apply -f /etc/kubernetes/kube-flannel.yml"
-  delegate_to: "{{ groups.master | first }}"
+  when: ansible_hostname == 'k8s-master1'
 
 - name: Allow master to be a worker
   become_user: vagrant
   shell: "kubectl taint nodes --all node-role.kubernetes.io/master-"
-  delegate_to: "{{ groups.master | first }}"
+  when: ansible_hostname == 'k8s-master1'
+  ignore_errors: yes
+
+- name: Helm Create accounts
+  become_user: vagrant
+  shell: "kubectl create serviceaccount --namespace kube-system tiller && kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller"
+  when: ansible_hostname == 'k8s-master1'
   ignore_errors: yes
 
 - name: Init helm
   become_user: vagrant
-  shell: "kubectl create serviceaccount --namespace kube-system tiller && kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller && helm init --upgrade --service-account tiller"
-  delegate_to: "{{ groups.master | first }}"
+  shell: "helm init --upgrade --service-account tiller"
+  when: ansible_hostname == 'k8s-master1'
   ignore_errors: yes
 
 - name: Install dashboard
   become_user: vagrant
-  shell: "helm install stable/kubernetes-dashboard --name k8s-dashboard --set=rbac.create=true,rbac.clusterAdminRole=true --namespace kube-system"
+  shell: 'helm install stable/kubernetes-dashboard --name k8s-dashboard --set=rbac.create=true,rbac.clusterAdminRole=true --namespace kube-system'
+  when: ansible_hostname == 'k8s-master1'
+  ignore_errors: yes
 
 - name: Run kubeadm join
-  shell: "{{ kubeadm_join }} --apiserver-advertise-address {{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }} --node-name {{ hostvars[inventory_hostname]['ansible_hostname'] }}"
-  when: "'others' in {{group_names}}"
+  shell: "{{ kubeadm_join }} --apiserver-advertise-address {{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }} --node-name {{ hostvars[inventory_hostname]['ansible_hostname'] }} && hostname"
+  when: ansible_hostname != 'k8s-master1'
 
 ### ISSUES WITH JOINING AS MASTERS
 # - name: Run kubeadm join

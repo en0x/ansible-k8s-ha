@@ -46,3 +46,12 @@
       when: ansible_os_family == "RedHat"
   tags:
     - init-masters
+
+- hosts: master
+  become: yes
+  roles:
+    - role: post-install
+      when: ansible_os_family == "RedHat"
+  tags:
+    - post-install
+
