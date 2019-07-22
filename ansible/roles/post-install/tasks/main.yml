@@ -1,14 +1,14 @@
 ---
 - name: create .kube directory
   file:
-    path: $HOME/.kube
+    path: ~/.kube
     state: directory
     mode: 0755
 
 - name: Get kubeconfig and store it in $HOME/.kube/config
   fetch:
     src: /etc/kubernetes/admin.conf
-    dest: $HOME/.kube/config
+    dest: ~/.kube/config
     flat: yes
 
 - name: display post install message
@@ -20,3 +20,7 @@
         - currently there is only one master and two worker nodes
         - "see working nodes run: kubectl get nodes"
 
+
+- name: Remote server ansible variables
+  debug:
+    msg: "{{ ansible_env.HOME }}"
