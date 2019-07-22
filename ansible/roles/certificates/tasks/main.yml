@@ -1,0 +1,54 @@
+---
+- name: create ssl cert dir
+  file: path=/opt/kubernetes/pki state=directory
+  register: master_ssl_dir
+
+- name: copy openssl conf file to create certificate
+  template: src="openssl.conf.j2" dest=/opt/kubernetes/pki/openssl.conf
+  register: ssl_config
+
+- name: copy openssl conf file to create certificate
+  template: src="openssl-etcd.conf.j2" dest=/opt/kubernetes/pki/openssl-etcd.conf
+  register: ssl_config
+
+- stat: path=/opt/kubernetes/pki/ca-key.pem
+  register: ca_key_stat
+
+- name: create kubenetes certificates
+  when: not ca_key_stat.stat.exists
+  register: create_cert
+  command: "{{ item }}"
+  with_items:
+    - "openssl genrsa -out /opt/kubernetes/pki/ca-key.pem 2048"
+    - "openssl req -x509 -new -nodes -key /opt/kubernetes/pki/ca-key.pem -days 3666 -out /opt/kubernetes/pki/ca.pem -subj '/CN=kube-ca'"
+    - "openssl genrsa -out /opt/kubernetes/pki/admin-key.pem 2048"
+    - "openssl req -new -key /opt/kubernetes/pki/admin-key.pem -out /opt/kubernetes/pki/admin.csr -subj '/CN=kube-admin/O=system:masters'"
+    - "openssl x509 -req -in /opt/kubernetes/pki/admin.csr -CA /opt/kubernetes/pki/ca.pem -CAkey /opt/kubernetes/pki/ca-key.pem -CAcreateserial -out /opt/kubernetes/pki/admin.pem -days 3666"
+    - "openssl genrsa -out /opt/kubernetes/pki/apiserver-key.pem 2048"
+    - "openssl req -new -key /opt/kubernetes/pki/apiserver-key.pem -out /opt/kubernetes/pki/apiserver.csr -subj '/CN=kube-apiserver/O=system:masters' -config /opt/kubernetes/pki/openssl.conf"
+    - "openssl x509 -req -in /opt/kubernetes/pki/apiserver.csr -CA /opt/kubernetes/pki/ca.pem -CAkey /opt/kubernetes/pki/ca-key.pem -CAcreateserial -out /opt/kubernetes/pki/apiserver.pem -days 3666 -extensions v3_req -extfile /opt/kubernetes/pki/openssl.conf"
+    - "openssl genrsa -out /opt/kubernetes/pki/kubelet-client-key.pem 2048"
+    - "openssl req -new -key /opt/kubernetes/pki/kubelet-client-key.pem -out /opt/kubernetes/pki/kubelet-client.csr -subj '/CN=kubelet-client/O=system:masters'"
+    - "openssl x509 -req -in /opt/kubernetes/pki/kubelet-client.csr -CA /opt/kubernetes/pki/ca.pem -CAkey /opt/kubernetes/pki/ca-key.pem -CAcreateserial -out /opt/kubernetes/pki/kubelet-client.pem -days 3666"
+    - "openssl genrsa -out /opt/kubernetes/pki/front-proxy-client-key.pem 2048"
+    - "openssl req -new -key /opt/kubernetes/pki/front-proxy-client-key.pem -out /opt/kubernetes/pki/front-proxy-client.csr -subj '/CN=front-proxy-client'"
+    - "openssl x509 -req -in /opt/kubernetes/pki/front-proxy-client.csr -CA /opt/kubernetes/pki/ca.pem -CAkey /opt/kubernetes/pki/ca-key.pem -CAcreateserial -out /opt/kubernetes/pki/front-proxy-client.pem -days 3666"
+    - "openssl genrsa -out /opt/kubernetes/pki/scheduler-key.pem 2048"
+    - "openssl req -new -key /opt/kubernetes/pki/scheduler-key.pem -out /opt/kubernetes/pki/scheduler.csr -subj '/CN=system:kube-scheduler'"
+    - "openssl x509 -req -in /opt/kubernetes/pki/scheduler.csr -CA /opt/kubernetes/pki/ca.pem -CAkey /opt/kubernetes/pki/ca-key.pem -CAcreateserial -out /opt/kubernetes/pki/scheduler.pem -days 3666"
+    - "openssl genrsa -out /opt/kubernetes/pki/controller-key.pem 2048"
+    - "openssl req -new -key /opt/kubernetes/pki/controller-key.pem -out /opt/kubernetes/pki/controller.csr -subj '/CN=system:kube-controller-manager'"
+    - "openssl x509 -req -in /opt/kubernetes/pki/controller.csr -CA /opt/kubernetes/pki/ca.pem -CAkey /opt/kubernetes/pki/ca-key.pem -CAcreateserial -out /opt/kubernetes/pki/controller.pem -days 3666"
+    - "openssl genrsa -out /opt/kubernetes/pki/node-key.pem 2048"
+    - "openssl req -new -key /opt/kubernetes/pki/node-key.pem -out /opt/kubernetes/pki/node.csr -subj '/CN=kube-node/O=system:nodes'"
+    - "openssl x509 -req -in /opt/kubernetes/pki/node.csr -CA /opt/kubernetes/pki/ca.pem -CAkey /opt/kubernetes/pki/ca-key.pem -CAcreateserial -out /opt/kubernetes/pki/node.pem -days 3666"
+
+- name: create etcd certificate
+  when: etcd_peer_url_scheme == 'https'
+  register: etcd_cert
+  command: "{{ item }}"
+  with_items:
+    - "openssl genrsa -out /opt/kubernetes/pki/etcd-key.pem 2048"
+    - "openssl req -new -key /opt/kubernetes/pki/etcd-key.pem -out /opt/kubernetes/pki/etcd.csr -subj '/CN=Etcd-server' -config /opt/kubernetes/pki/openssl-etcd.conf"
+    - "openssl x509 -req -in /opt/kubernetes/pki/etcd.csr -CA /opt/kubernetes/pki/ca.pem -CAkey /opt/kubernetes/pki/ca-key.pem -CAcreateserial -out /opt/kubernetes/pki/etcd.pem -days 3666 -extensions v3_req -extfile /opt/kubernetes/pki/openssl-etcd.conf"
+
