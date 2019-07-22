@@ -32,9 +32,11 @@
 - name: reset Kubernetes master (just in case)
   command: kubeadm reset -f
   register: out
+  args:
+    creates: /etc/kubernetes/admin.conf
 
 - name: Run kubeadm on primary master
-  shell: "kubeadm init --config /etc/kubernetes/kubeadm-config.yaml --upload-certs"
+  shell: "kubeadm init --config /etc/kubernetes/kubeadm-config.yaml --upload-certs >> cluster.txt"
   delegate_to: "{{ groups.masters | first }}"
   args:
     creates: /etc/kubernetes/admin.conf
