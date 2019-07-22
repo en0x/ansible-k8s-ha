@@ -10,3 +10,13 @@
     src: /etc/kubernetes/admin.conf
     dest: $HOME/.kube/config
     flat: yes
+
+- name: display post install message
+  debug: msg="{{ post_install.split('\n') }}"
+  vars:
+    post_install: |
+      Things to know:
+        - kubeconfig file has been copied to your ~/.kube
+        - currently there is only one master and two worker nodes
+        - "see working nodes run: kubectl get nodes"
+
