@@ -6,7 +6,7 @@
 - name: Install yum-utils
   become: yes
   yum:
-    name: ['yum-utils']
+    name: ['yum-utils', "unzip"]
 
 - name: "Enable extras"
   shell:
