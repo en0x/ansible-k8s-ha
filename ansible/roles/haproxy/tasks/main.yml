@@ -25,3 +25,6 @@
     name: haproxy
     state: restarted
   when: ha_config is changed
+
+- name: selinux for haproxy
+  shell: "getsebool haproxy_connect_any && setsebool -P haproxy_connect_any 1"
