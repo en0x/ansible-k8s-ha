@@ -53,6 +53,7 @@ apiServer:
     authorization-mode: "Node,RBAC"
   certSANs:
   - {{keepalived.ip}}
+  # TODO: This should be moved to macro
   - k8s-master1
   - k8s-master2
   - k8s-master3
@@ -87,6 +88,7 @@ etcd:
       listen-client-urls: https://127.0.0.1:2379,https://{{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }}:2379
       listen-peer-urls: https://{{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }}:2380
     peerCertSANs:
+      # TODO: This should be moved to macro
     - k8s-master1
     - k8s-master2
     - k8s-master3
@@ -94,6 +96,7 @@ etcd:
     - 172.16.35.12
     - 172.16.35.13
     serverCertSANs:
+      # TODO: This should be moved to macro
     - k8s-master1
     - k8s-master2
     - k8s-master3
