@@ -57,4 +57,4 @@
 
 - name: Install helm
   shell: 'curl -L https://git.io/get_helm.sh | bash'
-
+  ignore_errors: yes
