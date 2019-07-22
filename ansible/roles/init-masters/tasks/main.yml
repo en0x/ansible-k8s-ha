@@ -111,3 +111,9 @@
 # - name: Run kubeadm join
 #   shell: "{{ kubeadm_join }} --certificate-key {{ cert_key_join }} --apiserver-advertise-address {{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }} --node-name {{ hostvars[inventory_hostname]['ansible_hostname'] }}"
 #   delegate_to: "{{ groups.others }}"
+
+- name: Ensure kubelet is started and enabled at boot.
+  service:
+    name: kubelet
+    state: started
+    enabled: true
