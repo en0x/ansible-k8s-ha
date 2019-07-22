@@ -19,8 +19,3 @@
         - kubeconfig file has been copied to your ~/.kube
         - currently there is only one master and two worker nodes
         - "see working nodes run: kubectl get nodes"
-
-
-- name: Remote server ansible variables
-  debug:
-    msg: "{{ ansible_env.HOME }}"
