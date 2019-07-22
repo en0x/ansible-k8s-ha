@@ -113,12 +113,6 @@
   when: ansible_hostname == 'k8s-master1'
   ignore_errors: yes
 
-- name: Install dashboard
-  become_user: vagrant
-  shell: 'helm install stable/kubernetes-dashboard --name k8s-dashboard --set=rbac.create=true,rbac.clusterAdminRole=true --namespace kube-system'
-  when: ansible_hostname == 'k8s-master1'
-  ignore_errors: yes
-
 - name: Run kubeadm join
   shell: "{{ kubeadm_join }} --apiserver-advertise-address {{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }} --node-name {{ hostvars[inventory_hostname]['ansible_hostname'] }} && hostname"
   when: ansible_hostname != 'k8s-master1'

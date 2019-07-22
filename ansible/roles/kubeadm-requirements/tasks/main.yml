@@ -55,6 +55,9 @@
   when: hostvars[item].ansible_host is defined
   with_items: "{{ groups.masters }}"
 
-- name: Install helm
-  shell: 'curl -L https://git.io/get_helm.sh | bash'
-  ignore_errors: yes
+- name: Retrieve helm binary archive.
+  unarchive:
+    src: https://storage.googleapis.com/kubernetes-helm/helm-v2.14.1-linux-amd64.zip
+    dest: /tmp
+    creates: /usr/local/bin/helm
+    remote_src: yes
