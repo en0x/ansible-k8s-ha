@@ -1,10 +1,4 @@
 ---
-- name: create .kube directory
-  file:
-    path: ~/.kube
-    state: directory
-    mode: 0755
-
 - name: Get kubeconfig and store it in $HOME/.kube/config
   fetch:
     src: /etc/kubernetes/admin.conf
@@ -19,3 +13,4 @@
         - kubeconfig file has been copied to your ~/.kube
         - currently there is only one master and two worker nodes
         - "see working nodes run: kubectl get nodes"
+  delegate_to: 127.0.0.1
