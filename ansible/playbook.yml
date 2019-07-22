@@ -1,0 +1,48 @@
+# Yum repo
+- hosts: all
+  become: yes
+  roles:
+    - role: requirements
+      when: ansible_os_family == "RedHat"
+  tags:
+    - yum-repo
+
+- hosts: all
+  become: yes
+  roles:
+    - role: kubeadm-requirements
+      when: ansible_os_family == "RedHat"
+  tags:
+    - kubeadm-requirements
+
+- hosts: all
+  become: yes
+  roles:
+    - role: docker
+      when: ansible_os_family == "RedHat"
+  tags:
+    - docker
+
+- hosts: all
+  become: yes
+  roles:
+    - role: haproxy
+      when: ansible_os_family == "RedHat"
+  tags:
+    - haproxy
+
+- hosts: all
+  become: yes
+  roles:
+    - role: keepalived
+      when: ansible_os_family == "RedHat"
+  tags:
+    - keepalived
+
+- hosts: masters
+  become: yes
+  roles:
+    - role: init-masters
+      when: ansible_os_family == "RedHat"
+  tags:
+    - init-masters
