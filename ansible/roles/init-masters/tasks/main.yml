@@ -98,6 +98,16 @@
   delegate_to: "{{ groups.master | first }}"
   ignore_errors: yes
 
+- name: Init helm
+  become_user: vagrant
+  shell: "kubectl create serviceaccount --namespace kube-system tiller && kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller && helm init --upgrade --service-account tiller"
+  delegate_to: "{{ groups.master | first }}"
+  ignore_errors: yes
+
+- name: Install dashboard
+  become_user: vagrant
+  shell: "helm install stable/kubernetes-dashboard --name k8s-dashboard --set=rbac.create=true,rbac.clusterAdminRole=true --namespace kube-system"
+
 - name: Run kubeadm join
   shell: "{{ kubeadm_join }} --apiserver-advertise-address {{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }} --node-name {{ hostvars[inventory_hostname]['ansible_hostname'] }}"
   when: "'others' in {{group_names}}"

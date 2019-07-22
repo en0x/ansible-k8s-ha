@@ -54,3 +54,7 @@
     state: present
   when: hostvars[item].ansible_host is defined
   with_items: "{{ groups.masters }}"
+
+- name: Install helm
+  shell: 'curl -L https://git.io/get_helm.sh | bash'
+
