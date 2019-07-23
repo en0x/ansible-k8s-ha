@@ -14,7 +14,7 @@
 - name: Install kubeadm packages
   become: yes
   yum:
-    name: ['kubelet-{{k8s_version}}', 'kubeadm-{{k8s_version}}', 'kubectl-{{k8s_version}}']
+    name: ['kubelet-{{k8s.version}}', 'kubeadm-{{k8s.version}}', 'kubectl-{{k8s.version}}']
     allow_downgrade: yes
 
 - name: Add netbridge config ip6

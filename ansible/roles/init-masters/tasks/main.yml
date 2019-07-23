@@ -29,11 +29,11 @@
 - name: kubeadm config images pull
   command: "kubeadm config images pull"
 
-# - name: reset Kubernetes master (just in case)
-#   command: kubeadm reset -f
-#   register: out
-#   args:
-#     creates: /etc/kubernetes/admin.conf
+- name: reset Kubernetes master (just in case)
+  command: kubeadm reset -f
+  register: out
+  args:
+    creates: /etc/kubernetes/admin.conf
 
 # - name: Run kubeadm on primary master
 #   shell: "kubeadm init --config /etc/kubernetes/kubeadm-config.yaml --upload-certs > /tmp/cluster.txt"
@@ -41,79 +41,74 @@
 #   args:
 #     creates: /etc/kubernetes/admin.conf
 
-# - name: Generate join token
-#   shell: kubeadm token create --print-join-command
-#   register: kubeadm_join_cmd
-#   delegate_to: "{{ groups.masters | first }}"
+- name: Generate join token
+  shell: kubeadm token create --print-join-command
+  register: kubeadm_join_cmd
+  delegate_to: "{{ groups.masters | first }}"
 
-# - set_fact:
-#     kubeadm_join: "{{ kubeadm_join_cmd.stdout }}"
+- set_fact:
+    kubeadm_join: "{{ kubeadm_join_cmd.stdout }}"
 
-# - debug: var=kubeadm_join
-#   delegate_to: "{{ groups.masters | first }}"
+- debug: var=kubeadm_join
+  delegate_to: "{{ groups.masters | first }}"
 
-# - name: Get certificate key
-#   shell: "kubeadm alpha certs certificate-key"
-#   register: cert_key_join
-#   delegate_to: "{{ groups.masters | first }}"
+- name: Get certificate key
+  shell: "kubeadm alpha certs certificate-key"
+  register: cert_key_join
+  delegate_to: "{{ groups.masters | first }}"
 
-# - set_fact:
-#     cert_key_join: "{{ cert_key_join.stdout }}"
-#   delegate_to: "{{ groups.masters | first }}"
+- set_fact:
+    cert_key_join: "{{ cert_key_join.stdout }}"
+  delegate_to: "{{ groups.masters | first }}"
 
-# - debug: var=cert_key_join
-#   delegate_to: "{{ groups.masters | first }}"
+- debug: var=cert_key_join
+  delegate_to: "{{ groups.masters | first }}"
 
-# - name: Store join command
-#   action: copy content="{{ kubeadm_join }}" dest="/etc/kubernetes/kubeadm-join.command"
-#   delegate_to: "{{ groups.masters | first }}"
+- name: Store join command
+  action: copy content="{{ kubeadm_join }}" dest="/etc/kubernetes/kubeadm-join.command"
+  delegate_to: "{{ groups.masters | first }}"
 
-# - name: create .kube directory
-#   become: yes
-#   become_user: vagrant
-#   file:
-#     path: $HOME/.kube
-#     state: directory
-#     mode: 0755
-#   when: ansible_hostname == 'k8s-master1'
+- name: create .kube directory
+  become: yes
+  become_user: vagrant
+  file:
+    path: $HOME/.kube
+    state: directory
+    mode: 0755
+  when: ansible_hostname == 'k8s-master1'
 
-# - name: copy admin.conf to user's kube config
-#   copy:
-#     src: /etc/kubernetes/admin.conf
-#     dest: /home/vagrant/.kube/config
-#     remote_src: yes
-#     owner: vagrant
-#   when: ansible_hostname == 'k8s-master1'
+- name: copy admin.conf to user's kube config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/vagrant/.kube/config
+    remote_src: yes
+    owner: vagrant
+  when: ansible_hostname == 'k8s-master1'
 
-# - name: Copy kube-flannel.yaml file
-#   template:
-#     src: kube-flannel.yml.j2
-#     dest: "/etc/kubernetes/kube-flannel.yml"
-#     mode: u=rw,g=r,o=r
-#   when: ansible_hostname == 'k8s-master1'
+- name: Copy kube-flannel.yaml file
+  template:
+    src: kube-flannel.yml.j2
+    dest: "/etc/kubernetes/kube-flannel.yml"
+    mode: u=rw,g=r,o=r
+  when: ansible_hostname == 'k8s-master1'
 
-# - name: Install flannel
-#   become_user: vagrant
-#   shell: "kubectl apply -f /etc/kubernetes/kube-flannel.yml"
-#   when: ansible_hostname == 'k8s-master1'
+- name: Install flannel
+  become_user: vagrant
+  shell: "kubectl apply -f /etc/kubernetes/kube-flannel.yml"
+  when: ansible_hostname == 'k8s-master1'
 
-# - name: Allow master to be a worker
-#   become_user: vagrant
-#   shell: "kubectl taint nodes --all node-role.kubernetes.io/master-"
-#   when: ansible_hostname == 'k8s-master1'
-#   ignore_errors: yes
+- name: Allow master to be a worker
+  become_user: vagrant
+  shell: "kubectl taint nodes --all node-role.kubernetes.io/master-"
+  when: ansible_hostname == 'k8s-master1'
+  ignore_errors: yes
 
-# - name: Run kubeadm join
-#   shell: "{{ kubeadm_join }} --apiserver-advertise-address {{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }} --node-name {{ hostvars[inventory_hostname]['ansible_hostname'] }} && hostname"
-#   when: ansible_hostname != 'k8s-master1'
+- name: Run kubeadm join
+  shell: "{{ kubeadm_join }} --certificate-key {{ cert_key_join }} --apiserver-advertise-address {{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }} --node-name {{ hostvars[inventory_hostname]['ansible_hostname'] }} > /tmp/cluster_join.txt"
+  when: ansible_hostname != 'k8s-master1'
 
-# ### ISSUES WITH JOINING AS MASTERS
-# # - name: Run kubeadm join
-# #   shell: "{{ kubeadm_join }} --certificate-key {{ cert_key_join }} --apiserver-advertise-address {{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }} --node-name {{ hostvars[inventory_hostname]['ansible_hostname'] }}"
-# #   delegate_to: "{{ groups.others }}"
-
-# - name: Ensure kubelet is started and enabled at boot.
-#   service:
-#     name: kubelet
-#     state: started
-#     enabled: true
+- name: Ensure kubelet is started and enabled at boot.
+  service:
+    name: kubelet
+    state: started
+    enabled: true
