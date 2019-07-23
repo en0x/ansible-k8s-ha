@@ -1,30 +1,23 @@
-
-{% macro second_node() -%}
-{% for host in groups['master'] | union(groups['second'])-%}
-  {{ hostvars[host]['ansible_hostname'] }}=https://{{ hostvars[host]['ansible_' + keepalived.interface].ipv4.address }}:2380
-  {%- if not loop.last -%},{%- endif -%}
-{%- endfor -%}
-{% endmacro -%}
-
-
-{% macro third_node() -%}
-{% for host in groups['masters'] -%}
-  {{ hostvars[host]['ansible_hostname'] }}=https://{{ hostvars[host]['ansible_' + keepalived.interface].ipv4.address }}:2380
-  {%- if not loop.last -%},{%- endif -%}
-{%- endfor -%}
-{% endmacro -%}
-
-{% macro all_hostnames() %}
-{% for host in groups['masters'] %}
-    - {{ hostvars[host]['ansible_hostname'] }}
-      {% raw %}{% endraw %}
-{%- endfor %}
-{% endmacro %}
-
 {% macro all_ips() -%}
 {% for host in groups['masters'] -%}
-    - {{ hostvars[host]['ansible_' + keepalived.interface].ipv4.address }}
-      {% raw %}{% endraw %}
+            - https://{{ hostvars[host]['ansible_' + keepalived.interface].ipv4.address }}:2379
+        {% raw %}{% endraw %}
+{%- endfor -%}
+{% endmacro -%}
+
+{% macro all() -%}
+{% for host in groups['masters'] -%}
+  - {{ hostvars[host]['ansible_' + keepalived.interface].ipv4.address }}
+  - {{ hostvars[host]['ansible_hostname'] }}
+  {% raw %}{% endraw %}
+{%- endfor -%}
+{% endmacro -%}
+
+{% macro all2() -%}
+{% for host in groups['masters'] -%}
+      - {{ hostvars[host]['ansible_' + keepalived.interface].ipv4.address }}
+    - {{ hostvars[host]['ansible_hostname'] }}
+    {% raw %}{% endraw %}
 {%- endfor -%}
 {% endmacro -%}
 
@@ -32,7 +25,7 @@ apiVersion: kubeadm.k8s.io/v1beta2
 bootstrapTokens:
 - groups:
   - system:bootstrappers:kubeadm:default-node-token
-  token:  {{ k8s.token }}
+  token: "{{ k8s.token }}"
   ttl: 24h0m0s
   usages:
   - signing
@@ -53,13 +46,7 @@ apiServer:
     authorization-mode: "Node,RBAC"
   certSANs:
   - {{keepalived.ip}}
-  # TODO: This should be moved to macro
-  - k8s-master1
-  - k8s-master2
-  - k8s-master3
-  - 172.16.35.11
-  - 172.16.35.12
-  - 172.16.35.13
+  {{ all() }}
   timeoutForControlPlane: 4m0s
 apiVersion: kubeadm.k8s.io/v1beta2
 certificatesDir: /etc/kubernetes/pki
@@ -69,40 +56,16 @@ controllerManager: {}
 dns:
   type: CoreDNS
 etcd:
-  local:
-    imageRepository: "gcr.io/etcd-development"
-    imageTag: "v3.3.13"
-    dataDir: /var/lib/etcd
-    extraArgs:
-      advertise-client-urls: https://{{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }}:2379
-      initial-advertise-peer-urls: https://{{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }}:2380
-{% if inventory_hostname == "k8s-master1" %}
-      initial-cluster: {{ ansible_hostname }}=https://{{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }}:2380
-{% endif %}
-{% if inventory_hostname == "k8s-master2" %}
-      initial-cluster: {{ second_node() }}
-{% endif %}
-{% if inventory_hostname == "k8s-master3" %}
-      initial-cluster: {{ third_node() }}
-{% endif %}
-      listen-client-urls: https://127.0.0.1:2379,https://{{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }}:2379
-      listen-peer-urls: https://{{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }}:2380
+    external:
+        endpoints:
+        {{ all_ips() }}
+        caFile: /etc/etcd/ca-etcd.pem
+        certFile: /etc/etcd/cert-etcd.pem
+        keyFile: /etc/etcd/cert-etcd-key.pem
     peerCertSANs:
-      # TODO: This should be moved to macro
-    - k8s-master1
-    - k8s-master2
-    - k8s-master3
-    - 172.16.35.11
-    - 172.16.35.12
-    - 172.16.35.13
+    {{ all2() }}
     serverCertSANs:
-      # TODO: This should be moved to macro
-    - k8s-master1
-    - k8s-master2
-    - k8s-master3
-    - 172.16.35.11
-    - 172.16.35.12
-    - 172.16.35.13
+    {{ all2() }}
 imageRepository: k8s.gcr.io
 kind: ClusterConfiguration
 kubernetesVersion: v1.15.1

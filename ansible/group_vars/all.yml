@@ -1,14 +1,17 @@
-k8s_version: 1.15.1
+k8s:
+  version: 1.15.1
+  token: "lr8z7r.6u3mibktxl23d188"
+  # For flannel use 10.244.0.0/16, calico uses 192.168.0.0/16
+  pod_network: "10.244.0.0/16"
 
 docker_version: 18.09.8
 
 keepalived:
   ip: 172.16.35.100
-  interface: eth1
+  interface: "eth1"
   vrid: 100
   adv_interval: 1
 
-k8s:
-  token: "lr8z7r.6u3mibktxl23d188"
-  # For flannel use 10.244.0.0/16, calico uses 192.168.0.0/16
-  pod_network: "10.244.0.0/16"
+etcd:
+  version: "3.3.13"
+  interface: "eth1"

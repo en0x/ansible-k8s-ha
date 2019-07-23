@@ -1,0 +1,164 @@
+---
+- name: Download statically linked cfssl binary
+  get_url:
+    url: "https://pkg.cfssl.org/R1.2/cfssl_linux-amd64"
+    dest: "/usr/local/bin/cfssl"
+    mode: 0755
+    owner: "root"
+    group: "root"
+  when: ansible_hostname == 'k8s-master1'
+
+- name: Download statically linked cfssljson binary
+  get_url:
+    url: "https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64"
+    dest: "/usr/local/bin/cfssljson"
+    owner: "root"
+    group: "root"
+    mode: 0755
+  when: ansible_hostname == 'k8s-master1'
+
+- name: Generate list of IP addresses and hostnames needed for etcd certificate
+  set_fact:
+    tmpEtcdHosts: |
+      {% set comma = joiner(",") %}
+      {% for item in groups["masters"] -%}
+        {{ comma() }}{{hostvars[item]['ansible_host']}}{{ comma() }}{{ hostvars[item]["ansible_hostname"] }}
+      {%- endfor %}
+  when: ansible_hostname == 'k8s-master1'
+
+- name: Remove newline from etcd hosts list
+  set_fact:
+    etcdHosts: "{{ tmpEtcdHosts |replace('\n', '') }}"
+  when: ansible_hostname == 'k8s-master1'
+
+- name: Create etcd config directory
+  file:
+    path: "/etc/etcd"
+    state: directory
+
+- name: Create etcd download directory
+  file:
+    path: "/opt/etcd"
+    state: directory
+
+- name: Create etcd bin directory
+  file:
+    path: "/usr/local/bin"
+    state: directory
+  tags:
+    - etcd
+
+- name: Create etcd data directory
+  file:
+    path: "/var/lib/etcd"
+    state: directory
+
+- name: Create etcd CA configuration file
+  template:
+    src: "ca-etcd-config.json.j2"
+    dest: "/etc/etcd/ca-etcd-config.json"
+    owner: "root"
+    group: "root"
+    mode: 0600
+  when: ansible_hostname == 'k8s-master1'
+
+- name: Copy the etcd CA certificate request file (CSR)
+  template:
+    src: "ca-etcd-csr.json.j2"
+    dest: "/etc/etcd/ca-etcd-csr.json"
+    owner: "root"
+    group: "root"
+    mode: 0600
+  when: ansible_hostname == 'k8s-master1'
+
+- name: Create the etcd key CSR file
+  template:
+    src: "cert-etcd-csr.json.j2"
+    dest: "/etc/etcd/cert-etcd-csr.json"
+    owner: "root"
+    group: "root"
+    mode: 0600
+  when: ansible_hostname == 'k8s-master1'
+
+- name: Generate the etcd CA and private key
+  shell: /usr/local/bin/cfssl gencert -initca /etc/etcd/ca-etcd-csr.json | /usr/local/bin/cfssljson -bare ca-etcd
+  args:
+    chdir: "/etc/etcd"
+    creates: "/etc/etcd/cert-etcd.pem"
+  when: ansible_hostname == 'k8s-master1'
+
+- name: Generate TLS certificate for etcd
+  shell: "/usr/local/bin/cfssl gencert -ca=ca-etcd.pem -ca-key=ca-etcd-key.pem -config=ca-etcd-config.json -hostname={{ etcdHosts }} -profile=etcd cert-etcd-csr.json | /usr/local/bin/cfssljson -bare cert-etcd"
+  args:
+    chdir: "/etc/etcd"
+    creates: "/etc/etcd/cert-etcd-key.pem"
+  when: ansible_hostname == 'k8s-master1'
+
+- name: Downloading official etcd release
+  get_url:
+    url: "https://github.com/coreos/etcd/releases/download/v{{ etcd.version }}/etcd-v{{ etcd.version }}-linux-amd64.tar.gz"
+    dest: "/opt/etcd/etcd-v{{ etcd.version }}-linux-amd64.tar.gz"
+    mode: 0755
+  tags:
+    - etcd
+    - skip_ansible_lint
+
+- name: Unzip downloaded file
+  unarchive:
+    src: "/opt/etcd/etcd-v{{ etcd.version }}-linux-amd64.tar.gz"
+    dest: "/opt/etcd/"
+    remote_src: yes
+    owner: "root"
+    group: "root"
+    creates: "/opt/etcd/etcd-v{{ etcd.version }}-linux-amd64/etcd"
+
+
+- name: Copy etcd binaries to destination directory
+  copy:
+    src: "/opt/etcd/etcd-v{{ etcd.version }}-linux-amd64/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    mode: 0755
+    owner: root
+    group: root
+    remote_src: yes
+  with_items:
+    - etcd
+    - etcdctl
+
+
+- name: Create systemd unit file
+  template:
+    src: etcd.service.j2
+    dest: /etc/systemd/system/etcd.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - reload systemd
+
+- name: Slurp ETCD certificate from first master
+  slurp:
+    src: "/etc/etcd/{{ item }}"
+  with_items:
+    - ca-etcd.csr
+    - ca-etcd-key.pem
+    - ca-etcd.pem
+    - cert-etcd.csr
+    - cert-etcd-key.pem
+    - cert-etcd.pem
+  register: etcd_certs
+  run_once: true
+  delegate_to: "{{ groups.masters | first }}"
+
+- name: Write CA certificate from ansible host to disk
+  copy:
+    dest: "/etc/etcd/{{ item.item }}"
+    content: "{{ item.content | b64decode }}"
+  register: etcd_cert
+  with_items: "{{ etcd_certs.results }}"
+
+- name: Enable and start etcd
+  service:
+    name: etcd
+    enabled: yes
+    state: started

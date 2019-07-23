@@ -42,6 +42,14 @@
 - hosts: masters
   become: yes
   roles:
+    - role: etcd
+      when: ansible_os_family == "RedHat"
+  tags:
+    - etcd
+
+- hosts: masters
+  become: yes
+  roles:
     - role: init-masters
       when: ansible_os_family == "RedHat"
   tags:
