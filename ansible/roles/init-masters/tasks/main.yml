@@ -75,7 +75,7 @@
     path: $HOME/.kube
     state: directory
     mode: 0755
-  when: ansible_hostname == 'k8s-master1'
+#  when: ansible_hostname == 'k8s-master1'
 
 - name: copy admin.conf to user's kube config
   copy:
