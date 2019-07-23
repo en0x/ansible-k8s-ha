@@ -1,0 +1,62 @@
+- name: swap - remove current swaps from fstab
+  lineinfile:
+    dest: /etc/fstab
+    regexp: '^/[\S]+\s+none\s+swap '
+    state: absent
+
+- name: Turn swap off
+  shell: swapoff -a
+
+- name: Set Enforce
+  command: setenforce 0
+  ignore_errors: True
+
+- name: Install kubeadm packages
+  become: yes
+  yum:
+    name: ['kubelet-{{k8s_version}}', 'kubeadm-{{k8s_version}}', 'kubectl-{{k8s_version}}']
+    allow_downgrade: yes
+
+- name: Add netbridge config ip6
+  lineinfile:
+    path: /etc/sysctl.d/k8s.conf
+    line: 'net.bridge.bridge-nf-call-ip6tables = 1'
+    state: present
+    create: yes
+
+- name: Add netbridge config ip4
+  lineinfile:
+    path: /etc/sysctl.d/k8s.conf
+    line: 'net.bridge.bridge-nf-call-iptables = 1'
+    state: present
+    create: yes
+
+- name: update sysctl
+  command: sysctl --system
+
+# - name: Stop firewalld
+#   systemd:
+#     name: firewalld
+#     state: stopped
+#     enabled: no
+
+- name: Add ip forwarding
+  shell: "echo 1 > /proc/sys/net/ipv4/ip_forward"
+
+- name: Iptables -P FORWARD ACCEPT
+  shell: "iptables -P FORWARD ACCEPT && iptables -I FORWARD -s 0.0.0.0/0 -j ACCEPT && sysctl -w fs.inotify.max_user_watches=524288"
+
+- name: Add IP address of all hosts to all hosts
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '.*{{ item }}$'
+    line: "{{ hostvars[item].ansible_host }} {{item}}"
+    state: present
+  when: hostvars[item].ansible_host is defined
+  with_items: "{{ groups.masters }}"
+
+- name: add arguments to /etc/sysconfig/kubelet
+  lineinfile:
+    path: /etc/sysconfig/kubelet
+    regexp: '^KUBELET_EXTRA_ARGS='
+    line: 'KUBELET_EXTRA_ARGS="--kubelet-cgroups=/system.slice/kubelet.service --runtime-cgroups=/system.slice/docker.service"'

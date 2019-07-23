@@ -36,9 +36,10 @@ Vagrant.configure("2") do |node|
             "k8s-master3" => { "ansible_host" => "#{$private_subnet}.13", "ansible_port" => "22"}
           }
           ansible.groups = {
-            "k8s-main" => ["k8s-master1"],
-            "k8s-masters" => ["k8s-master[2:3]"],
-            "all_groups:children" => ["k8s-main", "k8s-masters"]
+            "master" => ["k8s-master1"],
+            "second" => ["k8s-master2"],
+            "others" => ["k8s-master[2:3]"],
+            "masters" => ["k8s-master[1:3]"]
           }
           ansible.become = true
           ansible.limit = "all"

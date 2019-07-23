@@ -1,0 +1,154 @@
+
+{% macro second_node() -%}
+{% for host in groups['master'] | union(groups['second'])-%}
+  {{ hostvars[host]['ansible_hostname'] }}=https://{{ hostvars[host]['ansible_' + keepalived.interface].ipv4.address }}:2380
+  {%- if not loop.last -%},{%- endif -%}
+{%- endfor -%}
+{% endmacro -%}
+
+
+{% macro third_node() -%}
+{% for host in groups['masters'] -%}
+  {{ hostvars[host]['ansible_hostname'] }}=https://{{ hostvars[host]['ansible_' + keepalived.interface].ipv4.address }}:2380
+  {%- if not loop.last -%},{%- endif -%}
+{%- endfor -%}
+{% endmacro -%}
+
+{% macro all_hostnames() %}
+{% for host in groups['masters'] %}
+    - {{ hostvars[host]['ansible_hostname'] }}
+      {% raw %}{% endraw %}
+{%- endfor %}
+{% endmacro %}
+
+{% macro all_ips() -%}
+{% for host in groups['masters'] -%}
+    - {{ hostvars[host]['ansible_' + keepalived.interface].ipv4.address }}
+      {% raw %}{% endraw %}
+{%- endfor -%}
+{% endmacro -%}
+
+apiVersion: kubeadm.k8s.io/v1beta2
+bootstrapTokens:
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token:  {{ k8s.token }}
+  ttl: 24h0m0s
+  usages:
+  - signing
+  - authentication
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }}
+  bindPort: 6443
+nodeRegistration:
+  criSocket: /var/run/dockershim.sock
+  name: {{ hostvars[inventory_hostname]['ansible_hostname'] }}
+#  taints:
+#  - effect: NoSchedule
+#    key: node-role.kubernetes.io/master
+---
+apiServer:
+  extraArgs:
+    authorization-mode: "Node,RBAC"
+  certSANs:
+  - {{keepalived.ip}}
+  # TODO: This should be moved to macro
+  - k8s-master1
+  - k8s-master2
+  - k8s-master3
+  - 172.16.35.11
+  - 172.16.35.12
+  - 172.16.35.13
+  timeoutForControlPlane: 4m0s
+apiVersion: kubeadm.k8s.io/v1beta2
+certificatesDir: /etc/kubernetes/pki
+clusterName: kubernetes
+controlPlaneEndpoint: {{keepalived.ip}}:443
+controllerManager: {}
+dns:
+  type: CoreDNS
+etcd:
+  local:
+    imageRepository: "gcr.io/etcd-development"
+    imageTag: "v3.3.13"
+    dataDir: /var/lib/etcd
+    extraArgs:
+      advertise-client-urls: https://{{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }}:2379
+      initial-advertise-peer-urls: https://{{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }}:2380
+{% if inventory_hostname == "k8s-master1" %}
+      initial-cluster: {{ ansible_hostname }}=https://{{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }}:2380
+{% endif %}
+{% if inventory_hostname == "k8s-master2" %}
+      initial-cluster: {{ second_node() }}
+{% endif %}
+{% if inventory_hostname == "k8s-master3" %}
+      initial-cluster: {{ third_node() }}
+{% endif %}
+      listen-client-urls: https://127.0.0.1:2379,https://{{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }}:2379
+      listen-peer-urls: https://{{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }}:2380
+    peerCertSANs:
+      # TODO: This should be moved to macro
+    - k8s-master1
+    - k8s-master2
+    - k8s-master3
+    - 172.16.35.11
+    - 172.16.35.12
+    - 172.16.35.13
+    serverCertSANs:
+      # TODO: This should be moved to macro
+    - k8s-master1
+    - k8s-master2
+    - k8s-master3
+    - 172.16.35.11
+    - 172.16.35.12
+    - 172.16.35.13
+imageRepository: k8s.gcr.io
+kind: ClusterConfiguration
+kubernetesVersion: v1.15.1
+networking:
+  dnsDomain: cluster.local
+  podSubnet: {{k8s.pod_network}}
+scheduler: {}
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+bindAddress: 0.0.0.0
+clientConnection:
+  acceptContentTypes: ""
+  burst: 10
+  contentType: application/vnd.kubernetes.protobuf
+  kubeconfig: /var/lib/kube-proxy/kubeconfig.conf
+  qps: 5
+clusterCIDR: {{k8s.pod_network}}
+configSyncPeriod: 15m0s
+conntrack:
+  maxPerCore: 32768
+  min: 131072
+  tcpCloseWaitTimeout: 1h0m0s
+  tcpEstablishedTimeout: 24h0m0s
+enableProfiling: false
+healthzBindAddress: 0.0.0.0:10256
+hostnameOverride: ""
+iptables:
+  masqueradeAll: false
+  masqueradeBit: 14
+  minSyncPeriod: 0s
+  syncPeriod: 30s
+ipvs:
+  excludeCIDRs: null
+  minSyncPeriod: 0s
+  scheduler: ""
+  strictARP: false
+  syncPeriod: 30s
+kind: KubeProxyConfiguration
+metricsBindAddress: 127.0.0.1:10249
+mode: ""
+nodePortAddresses: null
+oomScoreAdj: -999
+portRange: ""
+resourceContainer: /kube-proxy
+udpIdleTimeout: 250ms
+winkernel:
+  enableDSR: false
+  networkName: ""
+  sourceVip: ""
