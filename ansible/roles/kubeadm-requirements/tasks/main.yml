@@ -54,3 +54,9 @@
     state: present
   when: hostvars[item].ansible_host is defined
   with_items: "{{ groups.masters }}"
+
+- name: add arguments to /etc/sysconfig/kubelet
+  lineinfile:
+    path: /etc/sysconfig/kubelet
+    regexp: '^KUBELET_EXTRA_ARGS='
+    line: 'KUBELET_EXTRA_ARGS="--kubelet-cgroups=/system.slice/kubelet.service --runtime-cgroups=/system.slice/docker.service"'
