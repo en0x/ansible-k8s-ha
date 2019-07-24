@@ -34,7 +34,6 @@ Here is how it works:
 
 In this playbook we are only creating etcd cluster and k8s master nodes in HA. We are not creating worker nodes. Worker nodes will be added later the the playbook.
 
-
 Here are the following steps:
 1. Installing all dependencies
 2. Installing **docker-ce**

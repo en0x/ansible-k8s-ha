@@ -5,7 +5,10 @@ k8s:
   # For flannel use 10.244.0.0/16, calico uses 192.168.0.0/16
   pod_network: "10.244.0.0/16"
   flannel:
+    install: true
     interface: "eth1"
+  calico:
+    install: false
 
 docker:
   install: true

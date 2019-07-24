@@ -76,7 +76,6 @@
     path: $HOME/.kube
     state: directory
     mode: 0755
-#  when: ansible_hostname == 'k8s-master1'
 
 - name: copy admin.conf to user's kube config
   copy:
@@ -91,12 +90,12 @@
     src: kube-flannel.yml.j2
     dest: "/etc/kubernetes/kube-flannel.yml"
     mode: u=rw,g=r,o=r
-  when: ansible_hostname == 'k8s-master1'
+  when: ansible_hostname == 'k8s-master1' and k8s.flannel.install
 
 - name: Install flannel
   become_user: vagrant
   shell: "kubectl apply -f /etc/kubernetes/kube-flannel.yml"
-  when: ansible_hostname == 'k8s-master1'
+  when: ansible_hostname == 'k8s-master1' and k8s.flannel.install
 
 - name: Run kubeadm join on other masters
   shell: "{{ kubeadm_join }} --certificate-key {{ cert_key_join }} --apiserver-advertise-address {{ hostvars[inventory_hostname]['ansible_' + keepalived.interface].ipv4.address }} --node-name {{ hostvars[inventory_hostname]['ansible_hostname'] }} --control-plane > /tmp/cluster_join.txt"
