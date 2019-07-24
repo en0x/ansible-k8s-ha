@@ -1,4 +1,12 @@
 ---
+- name: Add docker-ce-stable repo
+  yum_repository:
+    name: docker-ce
+    description: docker-ce stable repo
+    baseurl: https://download.docker.com/linux/centos/7/$basearch/stable
+    gpgkey: https://download.docker.com/linux/centos/gpg
+    gpgcheck: yes
+
 - name: Install Docker dependencies on {{ ansible_distribution }}
   package:
     name: ["yum-utils", "lvm2", "device-mapper-persistent-data"]
@@ -11,7 +19,7 @@
 
 - name: Install Docker on {{ ansible_distribution }}
   package:
-    name: "docker-ce-{{ docker_version }}"
+    name: "docker-ce-{{ docker.version }}"
     state: latest
     update_cache: yes
 

@@ -7,12 +7,6 @@ k8s-master3 ansible_host=127.0.0.1 ansible_port=2201 ansible_user='vagrant' ansi
 [master]
 k8s-master1
 
-[second]
-k8s-master2
-
-[others]
-k8s-master[2:3]
-
 [masters]
 k8s-master[1:3]
 

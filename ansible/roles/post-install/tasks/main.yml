@@ -11,5 +11,5 @@
     post_install: |
       Things to know:
         - kubeconfig file has been copied to ~/.kube on your local machine
-        - "see working nodes run: kubectl get nodes"
+        - see working nodes run: kubectl get nodes
   delegate_to: 127.0.0.1

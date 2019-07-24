@@ -71,24 +71,15 @@
     mode: 0600
   when: ansible_hostname == 'k8s-master1'
 
-- name: Create the etcd key CSR file
-  template:
-    src: "cert-etcd-csr.json.j2"
-    dest: "/etc/etcd/cert-etcd-csr.json"
-    owner: "root"
-    group: "root"
-    mode: 0600
-  when: ansible_hostname == 'k8s-master1'
-
 - name: Generate the etcd CA and private key
-  shell: /usr/local/bin/cfssl gencert -initca /etc/etcd/ca-etcd-csr.json | /usr/local/bin/cfssljson -bare ca-etcd
+  shell: /usr/local/bin/cfssl gencert -initca ca-etcd-csr.json | /usr/local/bin/cfssljson -bare ca-etcd
   args:
     chdir: "/etc/etcd"
     creates: "/etc/etcd/cert-etcd.pem"
   when: ansible_hostname == 'k8s-master1'
 
 - name: Generate TLS certificate for etcd
-  shell: "/usr/local/bin/cfssl gencert -ca=ca-etcd.pem -ca-key=ca-etcd-key.pem -config=ca-etcd-config.json -hostname={{ etcdHosts }} -profile=etcd cert-etcd-csr.json | /usr/local/bin/cfssljson -bare cert-etcd"
+  shell: "/usr/local/bin/cfssl gencert -ca=ca-etcd.pem -ca-key=ca-etcd-key.pem -config=ca-etcd-config.json -hostname={{ etcdHosts }} -profile=etcd ca-etcd-csr.json | /usr/local/bin/cfssljson -bare cert-etcd"
   args:
     chdir: "/etc/etcd"
     creates: "/etc/etcd/cert-etcd-key.pem"

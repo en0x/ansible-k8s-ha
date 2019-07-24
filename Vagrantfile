@@ -37,8 +37,6 @@ Vagrant.configure("2") do |node|
           }
           ansible.groups = {
             "master" => ["k8s-master1"],
-            "second" => ["k8s-master2"],
-            "others" => ["k8s-master[2:3]"],
             "masters" => ["k8s-master[1:3]"]
           }
           ansible.become = true

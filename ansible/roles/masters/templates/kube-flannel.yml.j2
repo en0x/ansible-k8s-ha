@@ -174,6 +174,7 @@ spec:
         args:
         - --ip-masq
         - --kube-subnet-mgr
+        - --iface={{ k8s.flannel.interface }}
         resources:
           requests:
             cpu: "100m"
@@ -184,7 +185,7 @@ spec:
         securityContext:
           privileged: false
           capabilities:
-             add: ["NET_ADMIN"]
+            add: ["NET_ADMIN"]
         env:
         - name: POD_NAME
           valueFrom:
@@ -254,6 +255,7 @@ spec:
         args:
         - --ip-masq
         - --kube-subnet-mgr
+        - --iface={{ k8s.flannel.interface }}
         resources:
           requests:
             cpu: "100m"
@@ -264,7 +266,7 @@ spec:
         securityContext:
           privileged: false
           capabilities:
-             add: ["NET_ADMIN"]
+            add: ["NET_ADMIN"]
         env:
         - name: POD_NAME
           valueFrom:
@@ -334,6 +336,7 @@ spec:
         args:
         - --ip-masq
         - --kube-subnet-mgr
+        - --iface={{ k8s.flannel.interface }}
         resources:
           requests:
             cpu: "100m"
@@ -344,7 +347,7 @@ spec:
         securityContext:
           privileged: false
           capabilities:
-             add: ["NET_ADMIN"]
+            add: ["NET_ADMIN"]
         env:
         - name: POD_NAME
           valueFrom:
@@ -414,6 +417,7 @@ spec:
         args:
         - --ip-masq
         - --kube-subnet-mgr
+        - --iface={{ k8s.flannel.interface }}
         resources:
           requests:
             cpu: "100m"
@@ -424,7 +428,7 @@ spec:
         securityContext:
           privileged: false
           capabilities:
-             add: ["NET_ADMIN"]
+            add: ["NET_ADMIN"]
         env:
         - name: POD_NAME
           valueFrom:
@@ -494,7 +498,7 @@ spec:
         args:
         - --ip-masq
         - --kube-subnet-mgr
-        - --iface=eth1
+        - --iface={{ k8s.flannel.interface }}
         resources:
           requests:
             cpu: "100m"
@@ -505,7 +509,7 @@ spec:
         securityContext:
           privileged: false
           capabilities:
-             add: ["NET_ADMIN"]
+            add: ["NET_ADMIN"]
         env:
         - name: POD_NAME
           valueFrom:
