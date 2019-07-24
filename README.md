@@ -55,3 +55,5 @@ Here are the following steps:
 >  args:
 >    creates: /home/vagrant/.kube/config
 >```
+
+2. Add worker nodes
