@@ -34,12 +34,6 @@
 - name: update sysctl
   command: sysctl --system
 
-# - name: Stop firewalld
-#   systemd:
-#     name: firewalld
-#     state: stopped
-#     enabled: no
-
 - name: Add ip forwarding
   shell: "echo 1 > /proc/sys/net/ipv4/ip_forward"
 

@@ -1,7 +1,7 @@
 {% macro all_ips() -%}
 {% for host in groups['masters'] -%}
             - https://{{ hostvars[host]['ansible_' + keepalived.interface].ipv4.address }}:2379
-        {% raw %}{% endraw %}
+    {% raw %}{% endraw %}
 {%- endfor -%}
 {% endmacro -%}
 
@@ -37,9 +37,9 @@ localAPIEndpoint:
 nodeRegistration:
   criSocket: /var/run/dockershim.sock
   name: {{ hostvars[inventory_hostname]['ansible_hostname'] }}
-#  taints:
-#  - effect: NoSchedule
-#    key: node-role.kubernetes.io/master
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
 ---
 apiServer:
   extraArgs:
@@ -50,22 +50,18 @@ apiServer:
   timeoutForControlPlane: 4m0s
 apiVersion: kubeadm.k8s.io/v1beta2
 certificatesDir: /etc/kubernetes/pki
-clusterName: kubernetes
+clusterName: {{ k8s.cluster_name }}
 controlPlaneEndpoint: {{keepalived.ip}}:443
 controllerManager: {}
 dns:
   type: CoreDNS
 etcd:
-    external:
-        endpoints:
-        {{ all_ips() }}
-        caFile: /etc/etcd/ca-etcd.pem
-        certFile: /etc/etcd/cert-etcd.pem
-        keyFile: /etc/etcd/cert-etcd-key.pem
-    peerCertSANs:
-    {{ all2() }}
-    serverCertSANs:
-    {{ all2() }}
+  external:
+    endpoints:
+    {{ all_ips() }}
+    caFile: /etc/etcd/ca-etcd.pem
+    certFile: /etc/etcd/cert-etcd.pem
+    keyFile: /etc/etcd/cert-etcd-key.pem
 imageRepository: k8s.gcr.io
 kind: ClusterConfiguration
 kubernetesVersion: v1.15.1

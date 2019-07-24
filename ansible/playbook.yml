@@ -1,4 +1,3 @@
-# Yum repo
 - hosts: all
   become: yes
   roles:
@@ -18,48 +17,41 @@
 - hosts: all
   become: yes
   roles:
-    - role: docker
-      when: ansible_os_family == "RedHat"
+    - { role: docker, when: ansible_os_family == "RedHat" and docker.install }
   tags:
     - docker
 
 - hosts: all
   become: yes
   roles:
-    - role: haproxy
-      when: ansible_os_family == "RedHat"
+    - { role: haproxy, when: ansible_os_family == "RedHat" and haproxy.install }
   tags:
     - haproxy
 
 - hosts: all
   become: yes
   roles:
-    - role: keepalived
-      when: ansible_os_family == "RedHat"
+    - { role: keepalived, when: ansible_os_family == "RedHat" and keepalived.install }
   tags:
     - keepalived
 
 - hosts: masters
   become: yes
   roles:
-    - role: etcd
-      when: ansible_os_family == "RedHat"
+    - { role: etcd, when: ansible_os_family == "RedHat" and etcd.install }
   tags:
     - etcd
 
 - hosts: masters
   become: yes
   roles:
-    - role: init-masters
-      when: ansible_os_family == "RedHat"
+    - { role: masters, when: ansible_os_family == "RedHat" and masters.install }
   tags:
-    - init-masters
+    - masters
 
 - hosts: master
   become: yes
   roles:
-    - role: post-install
-      when: ansible_os_family == "RedHat"
+    - { role: post-install, when: ansible_os_family == "RedHat" and masters.install }
   tags:
     - post-install
-
