@@ -116,7 +116,7 @@
   when: ansible_hostname == 'k8s-master1'
   ignore_errors: yes
 
-- name: Ensure kubelet is started and enabled at boot.
+- name: Ensure kubelet is started and enabled at boot
   service:
     name: kubelet
     state: started
