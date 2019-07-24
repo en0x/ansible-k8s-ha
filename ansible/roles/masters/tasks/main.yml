@@ -113,7 +113,7 @@
 - name: Allow master to be a worker
   become_user: vagrant
   shell: "kubectl taint nodes --all node-role.kubernetes.io/master-"
-  when: ansible_hostname != 'k8s-master1'
+  when: ansible_hostname == 'k8s-master1'
   ignore_errors: yes
 
 - name: Ensure kubelet is started and enabled at boot.
