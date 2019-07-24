@@ -1,0 +1,31 @@
+---
+- name: Install keepalived dependencies on {{ ansible_distribution }}
+  package:
+    name: ["iproute", "kmod", "psmisc", "nmap-ncat", "ipset", "ipset-libs", "ipvsadm"]
+    state: latest
+    update_cache: yes
+
+- name: Install keepalived on {{ ansible_distribution }}
+  package:
+    name: "keepalived"
+    state: latest
+    update_cache: yes
+
+- name: Setup keepalived config file
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+  register: config
+
+- name: Start and enable keepalived service
+  service:
+    name: keepalived
+    enabled: yes
+    state: started
+    daemon_reload: yes
+
+- name: Restart keepalived in case of config change
+  service:
+    name: keepalived
+    state: restarted
+  when: config is changed

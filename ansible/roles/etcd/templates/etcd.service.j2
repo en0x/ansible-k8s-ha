@@ -1,0 +1,47 @@
+#jinja2: trim_blocks:False
+{%- macro cluster_hosts() -%}
+{%- for host in groups['masters'] -%}
+{{hostvars[host]['ansible_hostname']}}=https://{{hostvars[host]['ansible_' + etcd.interface].ipv4.address}}:2380{% if not loop.last %},{% endif %}
+{%- endfor -%}
+{%- endmacro -%}
+
+[Unit]
+Description=etcd
+Documentation=https://github.com/coreos
+
+[Service]
+ExecStart=/usr/local/bin/etcd \
+  --advertise-client-urls={{'https://' + hostvars[inventory_hostname]['ansible_' + etcd.interface].ipv4.address + ':2379'}} \
+  --auto-compaction-retention=0 \
+  --cert-file=/etc/etcd/cert-etcd.pem \
+  --client-cert-auth=True \
+  --cors= \
+  --data-dir=/var/lib/etcd \
+  --election-timeout=1000 \
+  --heartbeat-interval=100 \
+  --initial-advertise-peer-urls={{'https://' + hostvars[inventory_hostname]['ansible_' + etcd.interface].ipv4.address + ':2380'}} \
+  --initial-cluster={{ cluster_hosts() }} \
+  --initial-cluster-state=new \
+  --initial-cluster-token={{ k8s.token }} \
+  --key-file=/etc/etcd/cert-etcd-key.pem \
+  --listen-client-urls={{'https://' + hostvars[inventory_hostname]['ansible_' + etcd.interface].ipv4.address + ':2379'}},https://127.0.0.1:2379 \
+  --listen-peer-urls={{'https://' + hostvars[inventory_hostname]['ansible_' + etcd.interface].ipv4.address + ':2380'}} \
+  --log-output=default \
+  --log-package-levels= \
+  --max-snapshots=5 \
+  --max-wals=5 \
+  --name={{ansible_hostname}} \
+  --peer-cert-file=/etc/etcd/cert-etcd.pem \
+  --peer-client-cert-auth=true \
+  --peer-key-file=/etc/etcd/cert-etcd-key.pem \
+  --peer-trusted-ca-file=/etc/etcd/ca-etcd.pem \
+  --quota-backend-bytes=0 \
+  --snapshot-count=100000 \
+  --trusted-ca-file=/etc/etcd/ca-etcd.pem \
+  --wal-dir=
+Restart=on-failure
+RestartSec=5
+Type=notify
+
+[Install]
+WantedBy=multi-user.target

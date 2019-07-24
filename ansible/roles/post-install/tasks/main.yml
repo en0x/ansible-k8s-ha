@@ -1,0 +1,15 @@
+---
+- name: Get kubeconfig and store it in $HOME/.kube/config
+  fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: ~/.kube/config
+    flat: yes
+
+- name: display post install message
+  debug: msg="{{ post_install.split('\n') }}"
+  vars:
+    post_install: |
+      Things to know:
+        - kubeconfig file has been copied to ~/.kube on your local machine
+        - "see working nodes run: kubectl get nodes"
+  delegate_to: 127.0.0.1
