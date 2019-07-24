@@ -1,0 +1,6 @@
+---
+- name: Apply helm tiller rbac yml
+  command: "kubectl apply -f {{ playbook_dir }}/roles/addons/files/helm-tiller-rbac.yml"
+
+- name: Init tiller on ansible host
+  command: "helm init --service-account tiller"

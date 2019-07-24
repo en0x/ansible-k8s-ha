@@ -1,5 +1,6 @@
 [TOC]
 - [General](#general)
+- [Requirements](#requirements)
 - [Vagrant](#vagrant)
 - [Ansible](#ansible)
 - [Kubernetes](#kubernetes)
@@ -9,6 +10,13 @@
 # General
 
 This code was written so we can test kubernetes clusters on local machines. But the main purpose of this code is to create kubernetes clusters on bare metal machines. Our goal was to only have master nodes in the cluster and that's why you won't see code for worker nodes. Adding provisioning of worker nodes to this playbook should be easy as most of the code is independent.
+
+# Requirements
+
+What you need to have installed on ansible host:
+* ansible
+* kubectl
+* helm
 
 # Vagrant
 
