@@ -55,3 +55,9 @@
     - { role: post-install, when: ansible_os_family == "RedHat" and masters.install }
   tags:
     - post-install
+
+- hosts: 127.0.0.1
+  roles:
+    - { role: addons }
+  tags:
+    - addons
