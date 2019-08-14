@@ -9,6 +9,8 @@ k8s:
     interface: "eth1"
   calico:
     install: false
+  config:
+    copy_to_ansible_host: true # do we want to copy kube config to ansible host
 
 docker:
   install: true

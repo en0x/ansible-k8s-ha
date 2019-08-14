@@ -40,7 +40,7 @@ Vagrant.configure("2") do |node|
             "masters" => ["k8s-master[1:3]"]
           }
           ansible.become = true
-          ansible.limit = "all"
+          ansible.limit = "all,localhost"
         end
       end
     end

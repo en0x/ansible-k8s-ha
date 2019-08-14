@@ -49,15 +49,18 @@
   tags:
     - masters
 
-- hosts: master
-  become: yes
-  roles:
-    - { role: post-install, when: ansible_os_family == "RedHat" and masters.install }
-  tags:
-    - post-install
-
 - hosts: 127.0.0.1
+  gather_facts: false
+  become: false
   roles:
-    - { role: addons }
+    - { role: addons, when: masters.install }
   tags:
     - addons
+
+- hosts: 127.0.0.1
+  become: false
+  gather_facts: false
+  roles:
+    - { role: post-install, when: masters.install }
+  tags:
+    - post-install
