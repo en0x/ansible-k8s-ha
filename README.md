@@ -17,8 +17,6 @@ What you need to have installed on ansible host:
 * ansible
 * kubectl
 * helm
-* vagrant
-* virtualbox
 
 # Vagrant
 
